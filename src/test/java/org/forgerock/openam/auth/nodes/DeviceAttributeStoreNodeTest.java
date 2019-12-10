@@ -34,8 +34,7 @@ import org.forgerock.openam.auth.node.api.TreeContext;
 import org.forgerock.openam.auth.nodes.DeviceAttributeStoreNode.Config;
 import org.forgerock.openam.core.CoreWrapper;
 import org.forgerock.openam.core.realms.Realm;
-import org.json.JSONException;
-import org.json.JSONObject;
+import org.forgerock.openam.utils.JsonValueBuilder;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -92,20 +91,20 @@ public class DeviceAttributeStoreNodeTest {
 
   @Test(description = "No Identifier", expectedExceptions = NodeProcessException.class)
   public void testProcessWithoutIdentifier()
-      throws NodeProcessException, IdRepoException, SSOException, JSONException {
-    JSONObject deviceAttributes = new JSONObject();
+      throws NodeProcessException, IdRepoException, SSOException {
+    JsonValue deviceAttributes = JsonValueBuilder.jsonValue().build();
     deviceAttributes.put("identifier", "testIdentifier");
-    deviceAttributes.put("profile", new JSONObject("{\"test\":\"value\"}"));
-    deviceAttributes.put("publicKey", new JSONObject("{\"test\":\"value\"}"));
-    deviceAttributes.put("location", new JSONObject("{\"test\":\"value\"}"));
+    deviceAttributes.put("profile", JsonValueBuilder.toJsonValue("{\"test\":\"value\"}"));
+    deviceAttributes.put("publicKey", JsonValueBuilder.toJsonValue("{\"test\":\"value\"}"));
+    deviceAttributes.put("location", JsonValueBuilder.toJsonValue("{\"test\":\"value\"}"));
 
     JsonValue sharedState = json(object(field(USERNAME, "bob"),
         field(DeviceAttribute.PROFILE.getVariableName(),
-            deviceAttributes.getJSONObject(DeviceAttribute.PROFILE.getAttributeName())),
+            deviceAttributes.get(DeviceAttribute.PROFILE.getAttributeName())),
         field(DeviceAttribute.PUBLIC_KEY.getVariableName(),
-            deviceAttributes.getJSONObject(DeviceAttribute.PUBLIC_KEY.getAttributeName())),
+            deviceAttributes.get(DeviceAttribute.PUBLIC_KEY.getAttributeName())),
         field(DeviceAttribute.LOCATION.getVariableName(),
-            deviceAttributes.getJSONObject(DeviceAttribute.LOCATION.getAttributeName()))
+            deviceAttributes.get(DeviceAttribute.LOCATION.getAttributeName()))
     ));
     JsonValue transientState = json(object());
 
@@ -120,16 +119,16 @@ public class DeviceAttributeStoreNodeTest {
 
   @Test(description = "Variable not exists in TreeContext")
   public void testProcessWithNotExistsInTreeContext()
-      throws NodeProcessException, IdRepoException, SSOException, JSONException {
-    JSONObject deviceAttributes = new JSONObject();
+      throws NodeProcessException, IdRepoException, SSOException {
+    JsonValue deviceAttributes = JsonValueBuilder.jsonValue().build();
     deviceAttributes.put("identifier", "testIdentifier");
-    deviceAttributes.put("profile", new JSONObject("{\"test\":\"value\"}"));
+    deviceAttributes.put("profile", JsonValueBuilder.toJsonValue("{\"test\":\"value\"}"));
 
     JsonValue sharedState = json(object(field(USERNAME, "bob"),
         field(DeviceAttribute.IDENTIFIER.getVariableName(),
-            deviceAttributes.getString(DeviceAttribute.IDENTIFIER.getAttributeName())),
+            deviceAttributes.get(DeviceAttribute.IDENTIFIER.getAttributeName())),
         field(DeviceAttribute.PROFILE.getVariableName(),
-            deviceAttributes.getJSONObject(DeviceAttribute.PROFILE.getAttributeName()))
+            deviceAttributes.get(DeviceAttribute.PROFILE.getAttributeName()))
     ));
     JsonValue transientState = json(object());
 
@@ -157,26 +156,26 @@ public class DeviceAttributeStoreNodeTest {
 
   @Test(description = "Update existing device attributes")
   public void testProcessWithCallbackWithUpdate()
-      throws NodeProcessException, IdRepoException, SSOException, JSONException {
-    JSONObject deviceAttributes = new JSONObject();
+      throws NodeProcessException, IdRepoException, SSOException {
+    JsonValue deviceAttributes = JsonValueBuilder.jsonValue().build();
     deviceAttributes.put("identifier", "testIdentifier");
-    deviceAttributes.put("profile", new JSONObject("{\"test\":\"value\"}"));
-    deviceAttributes.put("publicKey", new JSONObject("{\"test\":\"value\"}"));
-    deviceAttributes.put("location", new JSONObject("{\"test\":\"value\"}"));
+    deviceAttributes.put("profile", JsonValueBuilder.toJsonValue("{\"test\":\"value\"}"));
+    deviceAttributes.put("publicKey", JsonValueBuilder.toJsonValue("{\"test\":\"value\"}"));
+    deviceAttributes.put("location", JsonValueBuilder.toJsonValue("{\"test\":\"value\"}"));
 
     JsonValue sharedState = json(object(field(USERNAME, "bob"),
         field(DeviceAttribute.IDENTIFIER.getVariableName(),
-            deviceAttributes.getString(DeviceAttribute.IDENTIFIER.getAttributeName())),
+            deviceAttributes.get(DeviceAttribute.IDENTIFIER.getAttributeName())),
         field(DeviceAttribute.PROFILE.getVariableName(),
-            deviceAttributes.getJSONObject(DeviceAttribute.PROFILE.getAttributeName())),
+            deviceAttributes.get(DeviceAttribute.PROFILE.getAttributeName())),
         field(DeviceAttribute.PUBLIC_KEY.getVariableName(),
-            deviceAttributes.getJSONObject(DeviceAttribute.PUBLIC_KEY.getAttributeName())),
+            deviceAttributes.get(DeviceAttribute.PUBLIC_KEY.getAttributeName())),
         field(DeviceAttribute.LOCATION.getVariableName(),
-            deviceAttributes.getJSONObject(DeviceAttribute.LOCATION.getAttributeName()))
+            deviceAttributes.get(DeviceAttribute.LOCATION.getAttributeName()))
     ));
     JsonValue transientState = json(object());
 
-    HiddenValueCallback hiddenValueCallback = new HiddenValueCallback("profile publicKey location");
+    HiddenValueCallback hiddenValueCallback = new HiddenValueCallback("profile");
     hiddenValueCallback.setValue(deviceAttributes.toString());
 
     ArgumentCaptor<Map<String, Set>> captor = ArgumentCaptor.forClass(Map.class);
@@ -200,29 +199,29 @@ public class DeviceAttributeStoreNodeTest {
 
   @Test(description = "Keep the existing profile and create new profile")
   public void testProcessWithCallbackWithCreate()
-      throws NodeProcessException, IdRepoException, SSOException, JSONException {
-    JSONObject deviceAttributes = new JSONObject();
-    deviceAttributes.put("identifier", "testIdentifier");
-    deviceAttributes.put("profile", new JSONObject("{\"test\":\"value\"}"));
-    deviceAttributes.put("publicKey", new JSONObject("{\"test\":\"value\"}"));
-    deviceAttributes.put("location", new JSONObject("{\"test\":\"value\"}"));
+      throws NodeProcessException, IdRepoException, SSOException {
+    JsonValue collected = JsonValueBuilder.jsonValue().build();
+    collected.put("identifier", "testIdentifier");
+    collected.put("profile", JsonValueBuilder.toJsonValue("{\"test\":\"value\"}"));
+    collected.put("publicKey", JsonValueBuilder.toJsonValue("{\"test\":\"value\"}"));
+    collected.put("location", JsonValueBuilder.toJsonValue("{\"test\":\"value\"}"));
 
     JsonValue sharedState = json(object(field(USERNAME, "bob"),
         field(DeviceAttribute.IDENTIFIER.getVariableName(),
-            deviceAttributes.getString(DeviceAttribute.IDENTIFIER.getAttributeName())),
+            collected.get(DeviceAttribute.IDENTIFIER.getAttributeName())),
         field(DeviceAttribute.PROFILE.getVariableName(),
-            deviceAttributes.getJSONObject(DeviceAttribute.PROFILE.getAttributeName())),
+            collected.get(DeviceAttribute.PROFILE.getAttributeName())),
         field(DeviceAttribute.PUBLIC_KEY.getVariableName(),
-            deviceAttributes.getJSONObject(DeviceAttribute.PUBLIC_KEY.getAttributeName())),
+            collected.get(DeviceAttribute.PUBLIC_KEY.getAttributeName())),
         field(DeviceAttribute.LOCATION.getVariableName(),
-            deviceAttributes.getJSONObject(DeviceAttribute.LOCATION.getAttributeName()))
+            collected.get(DeviceAttribute.LOCATION.getAttributeName()))
     ));
     JsonValue transientState = json(object());
 
     HiddenValueCallback hiddenValueCallback = new HiddenValueCallback("profile publicKey location");
-    hiddenValueCallback.setValue(deviceAttributes.toString());
+    hiddenValueCallback.setValue(collected.toString());
 
-    JSONObject existingProfile = new JSONObject();
+    JsonValue existingProfile = JsonValueBuilder.jsonValue().build();
     existingProfile.put("identifier", "testIdentifier1");
 
     ArgumentCaptor<Map<String, Set>> captor = ArgumentCaptor.forClass(Map.class);
@@ -241,64 +240,20 @@ public class DeviceAttributeStoreNodeTest {
     assertThat(result.callbacks).isEmpty();
     //Make sure set Attribute contains the profile from the Callback
     assertThat(captor.getValue().get("deviceAttributes")).contains(existingProfile.toString());
-    assertThat(captor.getValue().get("deviceAttributes")).contains(deviceAttributes.toString());
-
-  }
-
-  @Test(description = "Existing data is not in json format")
-  public void testProcessWithInvalidJsonFormat()
-      throws NodeProcessException, IdRepoException, SSOException, JSONException {
-    JSONObject deviceAttributes = new JSONObject();
-    deviceAttributes.put("identifier", "testIdentifier");
-    deviceAttributes.put("profile", new JSONObject("{\"test\":\"value\"}"));
-    deviceAttributes.put("publicKey", new JSONObject("{\"test\":\"value\"}"));
-    deviceAttributes.put("location", new JSONObject("{\"test\":\"value\"}"));
-
-    JsonValue sharedState = json(object(field(USERNAME, "bob"),
-        field(DeviceAttribute.IDENTIFIER.getVariableName(),
-            deviceAttributes.getString(DeviceAttribute.IDENTIFIER.getAttributeName())),
-        field(DeviceAttribute.PROFILE.getVariableName(),
-            deviceAttributes.getJSONObject(DeviceAttribute.PROFILE.getAttributeName())),
-        field(DeviceAttribute.PUBLIC_KEY.getVariableName(),
-            deviceAttributes.getJSONObject(DeviceAttribute.PUBLIC_KEY.getAttributeName())),
-        field(DeviceAttribute.LOCATION.getVariableName(),
-            deviceAttributes.getJSONObject(DeviceAttribute.LOCATION.getAttributeName()))
-    ));
-    JsonValue transientState = json(object());
-
-    HiddenValueCallback hiddenValueCallback = new HiddenValueCallback("profile publicKey location");
-    hiddenValueCallback.setValue(deviceAttributes.toString());
-
-    ArgumentCaptor<Map<String, Set>> captor = ArgumentCaptor.forClass(Map.class);
-    amIdentity.setAttributes(captor.capture());
-
-    // When
-    given(amIdentity.isActive()).willReturn(true);
-    //Return the existing one with different identifier
-    when(amIdentity.getAttribute(anyString())).thenReturn(singleton("Invalid Json"));
-    doNothing().when(amIdentity).setAttributes(captor.capture());
-    Action result = node
-        .process(getContext(sharedState, transientState, singletonList(hiddenValueCallback)));
-
-    //Then
-    assertThat(result.outcome).isEqualTo("outcome");
-    assertThat(result.callbacks).isEmpty();
-    //Make sure set Attribute contains the profile from the Callback
-    assertThat(captor.getValue().get("deviceAttributes")).contains("Invalid Json");
-    assertThat(captor.getValue().get("deviceAttributes")).contains(deviceAttributes.toString());
+    assertThat(captor.getValue().get("deviceAttributes")).contains(collected.toString());
 
   }
 
   @Test(description = "SharedState has string instead of JSONObject")
   public void testProcessWithInvalidJsonFormatSharedState()
-      throws NodeProcessException, IdRepoException, SSOException, JSONException {
-    JSONObject deviceAttributes = new JSONObject();
+      throws NodeProcessException, IdRepoException, SSOException {
+    JsonValue deviceAttributes = JsonValueBuilder.jsonValue().build();
     deviceAttributes.put("identifier", "testIdentifier");
     deviceAttributes.put("profile", "myProfile");
 
     JsonValue sharedState = json(object(field(USERNAME, "bob"),
         field(DeviceAttribute.IDENTIFIER.getVariableName(),
-            deviceAttributes.getString(DeviceAttribute.IDENTIFIER.getAttributeName())),
+            deviceAttributes.get(DeviceAttribute.IDENTIFIER.getAttributeName())),
         field(DeviceAttribute.PROFILE.getVariableName(), "myProfile")));
     JsonValue transientState = json(object());
 
@@ -325,22 +280,22 @@ public class DeviceAttributeStoreNodeTest {
 
   @Test(description = "Save Failed", expectedExceptions = NodeProcessException.class)
   public void testProcessWithSaveFailed()
-      throws NodeProcessException, IdRepoException, SSOException, JSONException {
-    JSONObject deviceAttributes = new JSONObject();
+      throws NodeProcessException, IdRepoException, SSOException {
+    JsonValue deviceAttributes = JsonValueBuilder.jsonValue().build();
     deviceAttributes.put("identifier", "testIdentifier");
-    deviceAttributes.put("profile", new JSONObject("{\"test\":\"value\"}"));
-    deviceAttributes.put("publicKey", new JSONObject("{\"test\":\"value\"}"));
-    deviceAttributes.put("location", new JSONObject("{\"test\":\"value\"}"));
+    deviceAttributes.put("profile", JsonValueBuilder.toJsonValue("{\"test\":\"value\"}"));
+    deviceAttributes.put("publicKey", JsonValueBuilder.toJsonValue("{\"test\":\"value\"}"));
+    deviceAttributes.put("location", JsonValueBuilder.toJsonValue("{\"test\":\"value\"}"));
 
     JsonValue sharedState = json(object(field(USERNAME, "bob"),
         field(DeviceAttribute.IDENTIFIER.getVariableName(),
-            deviceAttributes.getString(DeviceAttribute.IDENTIFIER.getAttributeName())),
+            deviceAttributes.get(DeviceAttribute.IDENTIFIER.getAttributeName())),
         field(DeviceAttribute.PROFILE.getVariableName(),
-            deviceAttributes.getJSONObject(DeviceAttribute.PROFILE.getAttributeName())),
+            deviceAttributes.get(DeviceAttribute.PROFILE.getAttributeName())),
         field(DeviceAttribute.PUBLIC_KEY.getVariableName(),
-            deviceAttributes.getJSONObject(DeviceAttribute.PUBLIC_KEY.getAttributeName())),
+            deviceAttributes.get(DeviceAttribute.PUBLIC_KEY.getAttributeName())),
         field(DeviceAttribute.LOCATION.getVariableName(),
-            deviceAttributes.getJSONObject(DeviceAttribute.LOCATION.getAttributeName()))
+            deviceAttributes.get(DeviceAttribute.LOCATION.getAttributeName()))
     ));
     JsonValue transientState = json(object());
 

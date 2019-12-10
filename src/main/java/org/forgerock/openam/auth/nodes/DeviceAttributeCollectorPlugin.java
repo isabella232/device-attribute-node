@@ -89,7 +89,13 @@ public class DeviceAttributeCollectorPlugin extends AbstractNodeAmPlugin {
   @Override
   protected Map<String, Iterable<? extends Class<? extends Node>>> getNodesByVersion() {
     return Collections.singletonMap(getPluginVersion(),
-        Arrays.asList(DeviceAttributeCollectorNode.class, DeviceAttributeStoreNode.class));
+        Arrays.asList(
+            DeviceAttributeCollectorNode.class,
+            DeviceAttributeStoreNode.class,
+            DeviceContextMatchNode.class,
+            DeviceJailBreakVerificationNode.class,
+            DeviceLocationRangeNode.class
+            ));
   }
 
   /**

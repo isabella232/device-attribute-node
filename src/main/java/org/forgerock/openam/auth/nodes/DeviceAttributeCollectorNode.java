@@ -25,11 +25,13 @@ import static org.forgerock.openam.auth.nodes.DeviceAttribute.PUBLIC_KEY;
 
 import com.google.inject.assistedinject.Assisted;
 import com.sun.identity.authentication.callbacks.HiddenValueCallback;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import javax.inject.Inject;
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.client.utils.URIBuilder;
 import org.forgerock.json.JsonValue;
 import org.forgerock.openam.annotations.sm.Attribute;
 import org.forgerock.openam.auth.node.api.Action;
@@ -37,10 +39,7 @@ import org.forgerock.openam.auth.node.api.Node;
 import org.forgerock.openam.auth.node.api.NodeProcessException;
 import org.forgerock.openam.auth.node.api.SingleOutcomeNode;
 import org.forgerock.openam.auth.node.api.TreeContext;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.forgerock.openam.utils.JsonValueBuilder;
 
 /**
  * A node that checks to see if zero-page login headers have specified username and whether that
@@ -50,7 +49,10 @@ import org.slf4j.LoggerFactory;
     configClass = DeviceAttributeCollectorNode.Config.class)
 public class DeviceAttributeCollectorNode extends SingleOutcomeNode {
 
-  private final Logger logger = LoggerFactory.getLogger(DeviceAttributeCollectorNode.class);
+  public static final String SCHEME = "device";
+  public static final String HOST = "forgerock";
+  public static final String PARAM = "attributes";
+
   private final Config config;
 
   /**
@@ -90,11 +92,7 @@ public class DeviceAttributeCollectorNode extends SingleOutcomeNode {
   public Action process(TreeContext context) throws NodeProcessException {
     Optional<HiddenValueCallback> opt = context.getCallback(HiddenValueCallback.class);
     if (opt.isPresent() && !StringUtils.isEmpty(opt.get().getValue())) {
-      try {
-        return save(context, opt.get().getValue());
-      } catch (JSONException e) {
-        throw new NodeProcessException(e);
-      }
+      return save(context, opt.get().getValue());
     } else {
       return getCallback();
     }
@@ -108,9 +106,9 @@ public class DeviceAttributeCollectorNode extends SingleOutcomeNode {
    * DeviceAttribute#getAttributeName()}
    * @return Action which updated with {@link TreeContext#sharedState}
    */
-  private Action save(TreeContext context, String value) throws JSONException {
+  private Action save(TreeContext context, String value) {
 
-    JSONObject source = new JSONObject(value);
+    JsonValue source = JsonValueBuilder.toJsonValue(value);
 
     JsonValue newSharedState = context.sharedState.copy();
 
@@ -121,26 +119,27 @@ public class DeviceAttributeCollectorNode extends SingleOutcomeNode {
     if (config.deviceProfile()) {
       newSharedState
           .put(PROFILE.getVariableName(),
-              source.has(PROFILE.getAttributeName()) ? source.get(PROFILE.getAttributeName()) : "");
+              source.isDefined(PROFILE.getAttributeName()) ? source.get(PROFILE.getAttributeName())
+                  : "");
     }
     if (config.devicePublicKey()) {
       newSharedState
           .put(PUBLIC_KEY.getVariableName(),
-              source.has(PUBLIC_KEY.getAttributeName()) ? source.get(PUBLIC_KEY.getAttributeName())
+              source.isDefined(PUBLIC_KEY.getAttributeName()) ? source
+                  .get(PUBLIC_KEY.getAttributeName())
                   : "");
     }
     if (config.deviceLocation()) {
       newSharedState
           .put(LOCATION.getVariableName(),
-              source.has(LOCATION.getAttributeName()) ? source.get(LOCATION.getAttributeName())
+              source.isDefined(LOCATION.getAttributeName()) ? source
+                  .get(LOCATION.getAttributeName())
                   : "");
     }
     return goToNext().replaceSharedState(newSharedState).build();
-
-
   }
 
-  private Action getCallback() {
+  private Action getCallback() throws NodeProcessException {
     List<String> attributes = new ArrayList<>();
     if (config.deviceProfile()) {
       attributes.add(PROFILE.getAttributeName());
@@ -152,7 +151,18 @@ public class DeviceAttributeCollectorNode extends SingleOutcomeNode {
       attributes.add(LOCATION.getAttributeName());
     }
 
-    return send(new HiddenValueCallback(StringUtils.join(attributes, " ")))
-        .build();
+    URIBuilder builder = new URIBuilder()
+        .setScheme(SCHEME)
+        .setHost(HOST);
+
+    attributes.forEach(s -> builder.addParameter(PARAM, s));
+
+    try {
+      return send(
+          new HiddenValueCallback(builder.build().toString()))
+          .build();
+    } catch (URISyntaxException e) {
+      throw new NodeProcessException(e);
+    }
   }
 }

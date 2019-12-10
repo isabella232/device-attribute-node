@@ -20,8 +20,7 @@ import org.forgerock.openam.auth.node.api.ExternalRequestContext.Builder;
 import org.forgerock.openam.auth.node.api.NodeProcessException;
 import org.forgerock.openam.auth.node.api.TreeContext;
 import org.forgerock.openam.auth.nodes.DeviceAttributeCollectorNode.Config;
-import org.json.JSONException;
-import org.json.JSONObject;
+import org.forgerock.openam.utils.JsonValueBuilder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.testng.annotations.BeforeMethod;
@@ -58,18 +57,19 @@ public class DeviceAttributeCollectorNodeTest {
     assertThat(result.callbacks).hasSize(1);
     assertThat(result.callbacks.get(0)).isInstanceOf(HiddenValueCallback.class);
     assertThat(((HiddenValueCallback) result.callbacks.get(0)).getId())
-        .contains(DeviceAttribute.PROFILE.getAttributeName());
+        .isEqualTo("device://forgerock?attributes=profile&attributes=publicKey&attributes=location");
 
   }
 
   @Test
   public void testProcessWithCallback()
-      throws NodeProcessException,JSONException {
+      throws NodeProcessException {
     JsonValue sharedState = json(object(field(USERNAME, "bob")));
     JsonValue transientState = json(object());
 
-    HiddenValueCallback hiddenValueCallback = new HiddenValueCallback(DeviceAttribute.PROFILE.getAttributeName());
-    JSONObject profile = new JSONObject();
+    HiddenValueCallback hiddenValueCallback = new HiddenValueCallback(
+        DeviceAttribute.PROFILE.getAttributeName());
+    JsonValue profile = JsonValueBuilder.jsonValue().build();
     profile.put("identifier", "testIdentifier1");
     profile.put("profile", "{\"test\":\"value\"}");
     hiddenValueCallback.setValue(profile.toString());
@@ -88,12 +88,13 @@ public class DeviceAttributeCollectorNodeTest {
 
   @Test
   public void testProcessWithCallbackAllAttributes()
-      throws NodeProcessException, JSONException {
+      throws NodeProcessException  {
     JsonValue sharedState = json(object(field(USERNAME, "bob")));
     JsonValue transientState = json(object());
 
-    HiddenValueCallback hiddenValueCallback = new HiddenValueCallback(DeviceAttribute.PROFILE.getAttributeName());
-    JSONObject profile = new JSONObject();
+    HiddenValueCallback hiddenValueCallback = new HiddenValueCallback(
+        DeviceAttribute.PROFILE.getAttributeName());
+    JsonValue profile = JsonValueBuilder.jsonValue().build();
     profile.put("identifier", "testIdentifier1");
     profile.put("profile", "{\"test\":\"value\"}");
     profile.put("location", "{\"test\":\"value\"}");
@@ -107,10 +108,14 @@ public class DeviceAttributeCollectorNodeTest {
     //Then
     assertThat(result.outcome).isEqualTo("outcome");
     assertThat(result.callbacks).isEmpty();
-    assertThat(result.sharedState.get(DeviceAttribute.IDENTIFIER.getVariableName()).getObject()).isNotNull();
-    assertThat(result.sharedState.get(DeviceAttribute.PROFILE.getVariableName()).getObject()).isNotNull();
-    assertThat(result.sharedState.get(DeviceAttribute.PUBLIC_KEY.getVariableName()).getObject()).isNotNull();
-    assertThat(result.sharedState.get(DeviceAttribute.LOCATION.getVariableName()).getObject()).isNotNull();
+    assertThat(result.sharedState.get(DeviceAttribute.IDENTIFIER.getVariableName()).getObject())
+        .isNotNull();
+    assertThat(result.sharedState.get(DeviceAttribute.PROFILE.getVariableName()).getObject())
+        .isNotNull();
+    assertThat(result.sharedState.get(DeviceAttribute.PUBLIC_KEY.getVariableName()).getObject())
+        .isNotNull();
+    assertThat(result.sharedState.get(DeviceAttribute.LOCATION.getVariableName()).getObject())
+        .isNotNull();
 
   }
 
