@@ -26,8 +26,6 @@ import static org.forgerock.openam.auth.nodes.DeviceAttribute.PUBLIC_KEY;
 import com.google.inject.assistedinject.Assisted;
 import com.sun.identity.authentication.callbacks.HiddenValueCallback;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 import javax.inject.Inject;
 import org.apache.commons.lang.StringUtils;
@@ -140,23 +138,18 @@ public class DeviceAttributeCollectorNode extends SingleOutcomeNode {
   }
 
   private Action getCallback() throws NodeProcessException {
-    List<String> attributes = new ArrayList<>();
-    if (config.deviceProfile()) {
-      attributes.add(PROFILE.getAttributeName());
-    }
-    if (config.devicePublicKey()) {
-      attributes.add(PUBLIC_KEY.getAttributeName());
-    }
-    if (config.deviceLocation()) {
-      attributes.add(LOCATION.getAttributeName());
-    }
-
     URIBuilder builder = new URIBuilder()
         .setScheme(SCHEME)
         .setHost(HOST);
-
-    attributes.forEach(s -> builder.addParameter(PARAM, s));
-
+    if (config.deviceProfile()) {
+      builder.addParameter(PARAM, PROFILE.getAttributeName());
+    }
+    if (config.devicePublicKey()) {
+      builder.addParameter(PARAM, PUBLIC_KEY.getAttributeName());
+    }
+    if (config.deviceLocation()) {
+      builder.addParameter(PARAM, LOCATION.getAttributeName());
+    }
     try {
       return send(
           new HiddenValueCallback(builder.build().toString()))
