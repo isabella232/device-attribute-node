@@ -108,23 +108,27 @@ public class DeviceAttributeStoreNode extends SingleOutcomeNode implements Devic
   private void save(TreeContext context, AMIdentity identity)
       throws IdRepoException, SSOException, NodeProcessException {
 
+    final JsonValue[] existing = {JsonValueBuilder.jsonValue().build()};
     String identifier = getIdentifier(context);
+
     //Remove and overwrite the existing one base on the "identifier"
     Set<String> result = identity.getAttribute(DEVICE_ATTRIBUTES).stream()
         .filter(s -> {
-            JsonValue o = JsonValueBuilder.toJsonValue(s);
-          return !identifier
-              .equals(o.get(DeviceAttribute.IDENTIFIER.getAttributeName()).asString());
+          JsonValue o = JsonValueBuilder.toJsonValue(s);
+          if (identifier.equals(o.get(DeviceAttribute.IDENTIFIER.getAttributeName()).asString())) {
+            existing[0] = o;
+            return false;
+          }
+          return true;
         }).collect(Collectors.toSet());
 
-    JsonValue newState = JsonValueBuilder.jsonValue().build();
-    newState.put(DeviceAttribute.IDENTIFIER.getAttributeName(), identifier);
+    existing[0].put(DeviceAttribute.IDENTIFIER.getAttributeName(), identifier);
 
     config.deviceAttributes().forEach(deviceAttribute -> {
       try {
         DeviceAttribute da = DeviceAttribute.valueOf(deviceAttribute);
         if (context.sharedState.isDefined(da.getVariableName())) {
-          newState.put(da.getAttributeName(),
+          existing[0].put(da.getAttributeName(),
               context.sharedState.get(da.getVariableName()));
         }
       } catch (IllegalArgumentException e) {
@@ -132,7 +136,7 @@ public class DeviceAttributeStoreNode extends SingleOutcomeNode implements Devic
       }
     });
 
-    result.add(newState.toString());
+    result.add(existing[0].toString());
 
     //Persist the attribute
     Map<String, Set> attrMap = new HashMap<>();

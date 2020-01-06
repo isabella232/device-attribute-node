@@ -57,7 +57,7 @@ public class DeviceAttributeCollectorNodeTest {
     assertThat(result.callbacks).hasSize(1);
     assertThat(result.callbacks.get(0)).isInstanceOf(HiddenValueCallback.class);
     assertThat(((HiddenValueCallback) result.callbacks.get(0)).getId())
-        .isEqualTo("device://forgerock?attributes=profile&attributes=publicKey&attributes=location");
+        .isEqualTo("DeviceAttributeCallback://forgerock?attributes=profile&attributes=publicKey&attributes=location");
 
   }
 

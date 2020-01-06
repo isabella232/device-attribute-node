@@ -47,7 +47,7 @@ import org.forgerock.openam.utils.JsonValueBuilder;
     configClass = DeviceAttributeCollectorNode.Config.class)
 public class DeviceAttributeCollectorNode extends SingleOutcomeNode {
 
-  public static final String SCHEME = "device";
+  public static final String SCHEME = "DeviceAttributeCallback";
   public static final String HOST = "forgerock";
   public static final String PARAM = "attributes";
 
@@ -141,6 +141,7 @@ public class DeviceAttributeCollectorNode extends SingleOutcomeNode {
     URIBuilder builder = new URIBuilder()
         .setScheme(SCHEME)
         .setHost(HOST);
+
     if (config.deviceProfile()) {
       builder.addParameter(PARAM, PROFILE.getAttributeName());
     }
